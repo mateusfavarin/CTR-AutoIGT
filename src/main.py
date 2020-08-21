@@ -2,6 +2,7 @@ import curses
 from cv2 import imshow, destroyAllWindows, waitKey
 
 from sys import argv
+from time import sleep
 
 from videoProcessing import *
 
@@ -52,7 +53,7 @@ def update_verification(stdscr, lap_times, index):
         @param lap_times: array of the lap times predicted.
         @param index: current index in the menu '''
 
-    y_text = 2
+    y_text = 4
     x_text = 7
     for i in range(len(lap_times)):
         if i % 5 == 1 or i % 5 == 3:
@@ -75,18 +76,41 @@ def verify_igt(stdscr, times, igt):
         @param times: return of process_video()
         @param igt: return of process_video() '''
 
+    def init_text():
+        ''' Clear screen and add the verification menu strings '''
+
+        stdscr.clear()
+        stdscr.addstr(0, 0, "Please verify each in game time screen. You can replace a number at any time.\nPress ENTER to submit the time. Press Z to review the previous time. Hold Q to open and close the in game time picture.")
+        stdscr.addstr(5, 0, "Lap 1:")
+        stdscr.addstr(6, 0, "Lap 2:")
+        stdscr.addstr(7, 0, "Lap 3:")
+
+    # Initializing the strings of the menu
+    init_text()
+    # Constants
     DIGITS_PER_IGT = 15
     DIGITS_PER_LAP = 5
     numbers = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9']
-    stdscr.clear()
-    stdscr.addstr(0, 0, "Please verify each in game time screen. You can replace a number at any time.\nPress ENTER to submit the time. Hold Q to open and close the in game time picture.")
-    stdscr.addstr(3, 0, "Lap 1:")
-    stdscr.addstr(4, 0, "Lap 2:")
-    stdscr.addstr(5, 0, "Lap 3:")
+    # Position of the cursor
     index = 0
 
     # Looping every time found in the speedrun
-    for i in range(len(times)):
+    i = 0
+    while True:
+        # If you're done, pop up a confirmation menu to avoid the user inputing wrong times by accident
+        if i == len(times):
+            # Creating menu
+            confirm = open_menu(stdscr, "Are you sure you want to submit these times?", ("No", "Yes"))
+            # Validating answer
+            if confirm == 1:
+                break
+            else:
+                # Redrawing the text of the menu
+                init_text()
+                i = max(0, i - 1)
+
+        # Showing the user which race he's reviewing the times
+        stdscr.addstr(3, 0, "Race #"+str(i + 1))
         first_update = True
         while True:
             if first_update:
@@ -102,6 +126,7 @@ def verify_igt(stdscr, times, igt):
                     if q_key == ord('q') or q_key == ord('Q'):
                         destroyAllWindows()
                         break
+
             # Movement in the menu using the arrow keys.
             elif key == curses.KEY_RIGHT:
                 index = (index + 1) % DIGITS_PER_IGT
@@ -115,9 +140,17 @@ def verify_igt(stdscr, times, igt):
             elif key == curses.KEY_DOWN:
                 index = (index + DIGITS_PER_LAP) % DIGITS_PER_IGT
                 update_verification(stdscr, times[i], index)
+
             # ENTER confirm the changes and submits
             elif key == curses.KEY_ENTER or key in [10, 13]:
+                i += 1
                 break
+
+            # Z goes to the previous race time
+            elif key == ord('z') or key == ord('Z'):
+                i = max(0, i - 1)
+                break
+
             # Digit keys are used to change the predictions in the menu
             for j in range(len(numbers)):
                 if key == ord(numbers[j]):
@@ -128,25 +161,34 @@ def verify_igt(stdscr, times, igt):
 
 
 def calculate_igt(stdscr, times):
+    ''' Calculates the total in game time of the speedrun.
+        @param stdscr: standart screen of curses.
+        @param times: every digit of each lap time of the speedrun. '''
+
+    # Variables to store the total time in h:min:s.ms
     hours = 0
     minutes = 0
     seconds = 0
     miliseconds = 0
+
+    # Looping each lap in each course
     for lap_times in times:
+        # Since there are three laps by course, sum one lap at a time
         for i in range(3):
             miliseconds += lap_times[4 + i * 5] + (10 * lap_times[3 + i * 5])
             if miliseconds > 99:
+                seconds += (miliseconds // 100)
                 miliseconds = miliseconds % 100
-                seconds += 1
             seconds += lap_times[2 + i * 5] + (10 * lap_times[1 + i * 5])
             if seconds > 59:
+                minutes += (seconds // 60)
                 seconds = seconds % 60
-                minutes += 1
             minutes += lap_times[0 + i * 5]
             if minutes > 59:
+                hours += (minutes // 60)
                 minutes = minutes % 60
-                hours += 1
 
+    # Outputting the result to the user
     stdscr.clear()
     zero_minute = "" if minutes > 9 else "0"
     zero_second = "" if seconds > 9 else "0"
@@ -191,7 +233,7 @@ def main(stdscr):
             # Open the menu to select the game region
             version = open_menu(stdscr, "What version was this run played on?", ("NTSC-U", "PAL", "NTSC-J"))
             # Open the menu to select the run category
-            category = open_menu(stdscr, "What is the category of this speedrun?", ("Any%", "All Cups"))
+            category = open_menu(stdscr, "What is the category of this speedrun?", ("Any% Warpless", "All Cups"))
             # Tell the user that you're trying to find the in game time
             stdscr.clear()
             stdscr.addstr(0, 0, "Analizing the speedrun...")

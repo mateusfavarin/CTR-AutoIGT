@@ -56,13 +56,14 @@ def crop_video(file_path):
     # However, there's no native way of doing it inside OpenCV2's library
     # To achieve the same result, there's a hacky way using pywinauto
     # If I create a blank window, I can search for its name and focus it
-    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
 
     # Setting this blank window on focus
     app = application.Application()
+    cv2.namedWindow(window_name, cv2.WINDOW_NORMAL)
     app.connect(title_re=window_name)
     app_dialog = app.top_window()
-    app_dialog.set_focus()
+    app_dialog.minimize()
+    app_dialog.restore()
 
     # The blank window always gets maximized when focused again.
     # To fix that, for some reason destroying the opencv2 window and

@@ -15,7 +15,7 @@ f.close()
 # Storing the inputs to the training function in the X, Y lists
 for i in range(IMG_COUNT):
     # cv2 images are already represented as numpy arrays, so there's no need to convert them
-    X.append(cv2.imread("digits/img"+str(i)+".png", cv2.IMREAD_GRAYSCALE))
+    X.append(cv2.imread("data/img"+str(i)+".png", cv2.IMREAD_GRAYSCALE))
     Y.append(int(digits[i]))
 
 # Converting the lists to numpy arrays
@@ -29,5 +29,5 @@ knc = nb.KNeighborsClassifier()
 knc.fit(X, Y)
 
 # Saving the model
-with open("CTR_digits.knn", 'wb') as file:
+with open("../CTR_digits.knn", 'wb') as file:
     pickle.dump(knc, file)
