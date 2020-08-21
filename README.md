@@ -7,4 +7,5 @@ The machine learning algorithm used was k-nearest neighbors, and it was trained 
 
 Run the main script, giving the path to the speedrun video file as an argument.
 > python main.py path/to/speedrun.mp4
+
 The video quality needs to be at least 360p. Alternatively, you can use the latest release, drag and drop the video file in the executable.
